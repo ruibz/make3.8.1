@@ -194,10 +194,10 @@ define_variable_in_set (const char *name, unsigned int length,
 	  if (v->value != 0)
 	    free (v->value);
 	  v->value = xstrdup (value);
-          if (flocp != 0)
-            v->fileinfo = *flocp;
-          else
-            v->fileinfo.filenm = 0;
+    if (flocp != 0)
+      v->fileinfo = *flocp;
+    else
+      v->fileinfo.filenm = 0;
 	  v->origin = origin;
 	  v->recursive = recursive;
 	}

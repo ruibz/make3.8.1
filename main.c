@@ -904,8 +904,6 @@ int main (int argc, char **argv, char **envp)
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 
-  /* Figure out where this program lives.  */
-
   if (argv[0] == 0)
     argv[0] = "";
   if (argv[0][0] == '\0')
@@ -923,8 +921,6 @@ int main (int argc, char **argv, char **envp)
   user_access ();
 
   initialize_global_hash_tables ();
-
-  /* Figure out where we are.  */
 
   if (getcwd (current_directory, GET_PATH_MAX) == 0)
     {
@@ -945,78 +941,52 @@ int main (int argc, char **argv, char **envp)
   define_variable (".FEATURES", 9,
                    "target-specific order-only second-expansion else-if",
                    o_default, 0);
-#ifndef NO_ARCHIVES
-  do_variable_definition (NILF, ".FEATURES", "archives",
-                          o_default, f_append, 0);
-#endif
-#ifdef MAKE_SYMLINKS
-  do_variable_definition (NILF, ".FEATURES", "check-symlink",
-                          o_default, f_append, 0);
-#endif
-
-  /* Read in variables from the environment.  It is important that this be
-     done before $(MAKE) is figured out so its definitions will not be
-     from the environment.  */
+  do_variable_definition (NILF, ".FEATURES", "archives", o_default, f_append, 0);
+  do_variable_definition (NILF, ".FEATURES", "check-symlink", o_default, f_append, 0);
 
   for (i = 0; envp[i] != 0; ++i)
+  {
+    int do_not_define = 0;
+    char *ep = envp[i];
+
+    while (*ep != '\0' && *ep != '=')
+      ++ep;
+    if (!do_not_define)
     {
-      int do_not_define = 0;
-      char *ep = envp[i];
+      struct variable *v;
 
-      while (*ep != '\0' && *ep != '=')
-        ++ep;
-      /* The result of pointer arithmetic is cast to unsigned int for
-	 machines where ptrdiff_t is a different size that doesn't widen
-	 the same.  */
-      if (!do_not_define)
-        {
-          struct variable *v;
+      v = define_variable (envp[i], (unsigned int) (ep - envp[i]), ep + 1, o_env, 1);
+      v->export = v_export;
 
-          v = define_variable (envp[i], (unsigned int) (ep - envp[i]),
-                               ep + 1, o_env, 1);
-          /* Force exportation of every variable culled from the environment.
-             We used to rely on target_environment's v_default code to do this.
-             But that does not work for the case where an environment variable
-             is redefined in a makefile with `override'; it should then still
-             be exported, because it was originally in the environment.  */
-          v->export = v_export;
+      if (streq (v->name, "SHELL"))
+      {
+        v->export = v_noexport;
+        shell_var.name = "SHELL";
+        shell_var.value = xstrdup (ep + 1);
+      }
 
-          /* Another wrinkle is that POSIX says the value of SHELL set in the
-             makefile won't change the value of SHELL given to subprocesses  */
-          if (streq (v->name, "SHELL"))
-            {
-              v->export = v_noexport;
-              shell_var.name = "SHELL";
-              shell_var.value = xstrdup (ep + 1);
-            }
-
-          /* If MAKE_RESTARTS is set, remember it but don't export it.  */
-          if (streq (v->name, "MAKE_RESTARTS"))
-            {
-              v->export = v_noexport;
-              restarts = (unsigned int) atoi (ep + 1);
-            }
-        }
+      if (streq (v->name, "MAKE_RESTARTS"))
+      {
+        v->export = v_noexport;
+        restarts = (unsigned int) atoi (ep + 1);
+      }
     }
-
-  /* Decode the switches.  */
+  }
 
   decode_env_switches (STRING_SIZE_TUPLE ("MAKEFLAGS"));
   decode_switches (argc, argv, 0);
   decode_debug_flags ();
 
-  /* Set always_make_flag if -B was given and we've not restarted already.  */
   always_make_flag = always_make_set && (restarts == 0);
 
   /* Print version information.  */
   if (print_version_flag || print_data_base_flag || db_level)
-    {
-      print_version ();
+  {
+    print_version ();
 
-      /* `make --version' is supposed to just print the version and exit.  */
-      if (print_version_flag)
-        die (0);
-    }
+    if (print_version_flag)
+      die (0);
+  }
 
   /* Set the "MAKE_COMMAND" variable to the name we were invoked with.
      (If it is a relative pathname with a slash, prepend our directory name
@@ -1253,148 +1223,8 @@ int main (int argc, char **argv, char **envp)
   read_makefiles
     = read_all_makefiles (makefiles == 0 ? (char **) 0 : makefiles->list);
 
-#ifdef WINDOWS32
-  /* look one last time after reading all Makefiles */
-  if (no_default_sh_exe)
-    no_default_sh_exe = !find_and_set_default_shell(NULL);
-#endif /* WINDOWS32 */
-
-#if defined (__MSDOS__) || defined (__EMX__)
-  /* We need to know what kind of shell we will be using.  */
-  {
-    extern int _is_unixy_shell (const char *_path);
-    struct variable *shv = lookup_variable (STRING_SIZE_TUPLE ("SHELL"));
-    extern int unixy_shell;
-    extern char *default_shell;
-
-    if (shv && *shv->value)
-      {
-	char *shell_path = recursively_expand(shv);
-
-	if (shell_path && _is_unixy_shell (shell_path))
-	  unixy_shell = 1;
-	else
-	  unixy_shell = 0;
-	if (shell_path)
-	  default_shell = shell_path;
-      }
-  }
-#endif /* __MSDOS__ || __EMX__ */
-
   /* Decode switches again, in case the variables were set by the makefile.  */
   decode_env_switches (STRING_SIZE_TUPLE ("MAKEFLAGS"));
-#if 0
-  decode_env_switches (STRING_SIZE_TUPLE ("MFLAGS"));
-#endif
-
-#if defined (__MSDOS__) || defined (__EMX__)
-  if (job_slots != 1
-# ifdef __EMX__
-      && _osmode != OS2_MODE /* turn off -j if we are in DOS mode */
-# endif
-      )
-    {
-      error (NILF,
-             _("Parallel jobs (-j) are not supported on this platform."));
-      error (NILF, _("Resetting to single job (-j1) mode."));
-      job_slots = 1;
-    }
-#endif
-
-#ifdef MAKE_JOBSERVER
-  /* If the jobserver-fds option is seen, make sure that -j is reasonable.  */
-
-  if (jobserver_fds)
-  {
-    char *cp;
-    unsigned int ui;
-
-    for (ui=1; ui < jobserver_fds->idx; ++ui)
-      if (!streq (jobserver_fds->list[0], jobserver_fds->list[ui]))
-        fatal (NILF, _("internal error: multiple --jobserver-fds options"));
-
-    /* Now parse the fds string and make sure it has the proper format.  */
-
-    cp = jobserver_fds->list[0];
-
-    if (sscanf (cp, "%d,%d", &job_fds[0], &job_fds[1]) != 2)
-      fatal (NILF,
-             _("internal error: invalid --jobserver-fds string `%s'"), cp);
-
-    /* The combination of a pipe + !job_slots means we're using the
-       jobserver.  If !job_slots and we don't have a pipe, we can start
-       infinite jobs.  If we see both a pipe and job_slots >0 that means the
-       user set -j explicitly.  This is broken; in this case obey the user
-       (ignore the jobserver pipe for this make) but print a message.  */
-
-    if (job_slots > 0)
-      error (NILF,
-             _("warning: -jN forced in submake: disabling jobserver mode."));
-
-    /* Create a duplicate pipe, that will be closed in the SIGCHLD
-       handler.  If this fails with EBADF, the parent has closed the pipe
-       on us because it didn't think we were a submake.  If so, print a
-       warning then default to -j1.  */
-
-    else if ((job_rfd = dup (job_fds[0])) < 0)
-      {
-        if (errno != EBADF)
-          pfatal_with_name (_("dup jobserver"));
-
-        error (NILF,
-               _("warning: jobserver unavailable: using -j1.  Add `+' to parent make rule."));
-        job_slots = 1;
-      }
-
-    if (job_slots > 0)
-      {
-        close (job_fds[0]);
-        close (job_fds[1]);
-        job_fds[0] = job_fds[1] = -1;
-        free (jobserver_fds->list);
-        free (jobserver_fds);
-        jobserver_fds = 0;
-      }
-  }
-
-  /* If we have >1 slot but no jobserver-fds, then we're a top-level make.
-     Set up the pipe and install the fds option for our children.  */
-
-  if (job_slots > 1)
-    {
-      char c = '+';
-
-      if (pipe (job_fds) < 0 || (job_rfd = dup (job_fds[0])) < 0)
-	pfatal_with_name (_("creating jobs pipe"));
-
-      /* Every make assumes that it always has one job it can run.  For the
-         submakes it's the token they were given by their parent.  For the
-         top make, we just subtract one from the number the user wants.  We
-         want job_slots to be 0 to indicate we're using the jobserver.  */
-
-      master_job_slots = job_slots;
-
-      while (--job_slots)
-        {
-          int r;
-
-          EINTRLOOP (r, write (job_fds[1], &c, 1));
-          if (r != 1)
-            pfatal_with_name (_("init jobserver pipe"));
-        }
-
-      /* Fill in the jobserver_fds struct for our children.  */
-
-      jobserver_fds = (struct stringlist *)
-                        xmalloc (sizeof (struct stringlist));
-      jobserver_fds->list = (char **) xmalloc (sizeof (char *));
-      jobserver_fds->list[0] = xmalloc ((sizeof ("1024")*2)+1);
-
-      sprintf (jobserver_fds->list[0], "%d,%d", job_fds[0], job_fds[1]);
-      jobserver_fds->idx = 1;
-      jobserver_fds->max = 1;
-    }
-#endif
 
 #ifndef MAKE_SYMLINKS
   if (check_symlink_flag)

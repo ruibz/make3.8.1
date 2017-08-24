@@ -1680,61 +1680,22 @@ new_job_ruibz (struct file *file)
               *out++ = ' ';
             }
           }
-        else
-        {
-          if (*in == openparen)
-            ++count;
+          else
+          {
+            if (*in == openparen)
+              ++count;
 
-          *out++ = *in++;
+            *out++ = *in++;
+          }
         }
       }
     }
+
+    if (out != in)
+      strcpy (out, in);
+    lines[i] = allocated_variable_expand_for_file (cmds->command_lines[i], file);
+    printf("\nruibz,test,expand,%s\n", lines[i]);
   }
-
-      /* There are no more references in this line to worry about.
-   Copy the remaining uninteresting text to the output.  */
-      if (out != in)
-  strcpy (out, in);
-      /* Finally, expand the line.  */
-      lines[i] = allocated_variable_expand_for_file (cmds->command_lines[i],
-                 file);
-       printf("\nruibz,test,expand,%s\n", lines[i]);
-    }
-
-  /* Start the command sequence, record it in a new
-     `struct child', and add that to the chain.  */
-
-  c = (struct child *) xmalloc (sizeof (struct child));
-  bzero ((char *)c, sizeof (struct child));
-  c->file = file;
-  c->command_lines = lines;
-  c->sh_batch_file = NULL;
-
-  /* Cache dontcare flag because file->dontcare can be changed once we
-     return. Check dontcare inheritance mechanism for details.  */
-  c->dontcare = file->dontcare;
-
-  /* Fetch the first command line to be run.  */
-  job_next_command (c);
-
-  /* Wait for a job slot to be freed up.  If we allow an infinite number
-     don't bother; also job_slots will == 0 if we're using the jobserver.  */
-
-  if (job_slots != 0)
-    while (job_slots_used == job_slots)
-      reap_children (1, 0);
-
-  ++jobserver_tokens;
-
-  /* The job is now primed.  Start it running.
-     (This will notice if there are in fact no commands.)  */
-  (void) start_waiting_job (c);
-
-  if (job_slots == 1 || not_parallel)
-    /* Since there is only one job slot, make things run linearly.
-       Wait for the child to die, setting the state to `cs_finished'.  */
-    while (file->command_state == cs_running)
-      reap_children (1, 0);
 
   return;
 }

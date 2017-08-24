@@ -938,9 +938,7 @@ int main (int argc, char **argv, char **envp)
   define_variable (".VARIABLES", 10, "", o_default, 0)->special = 1;
 
   /* Set up .FEATURES */
-  define_variable (".FEATURES", 9,
-                   "target-specific order-only second-expansion else-if",
-                   o_default, 0);
+  define_variable (".FEATURES", 9, "target-specific order-only second-expansion else-if", o_default, 0);
   do_variable_definition (NILF, ".FEATURES", "archives", o_default, f_append, 0);
   do_variable_definition (NILF, ".FEATURES", "check-symlink", o_default, f_append, 0);
 
@@ -988,16 +986,9 @@ int main (int argc, char **argv, char **envp)
       die (0);
   }
 
-  /* Set the "MAKE_COMMAND" variable to the name we were invoked with.
-     (If it is a relative pathname with a slash, prepend our directory name
-     so the result will run the same program regardless of the current dir.
-     If it is a name with no slash, we can only hope that PATH did not
-     find it in the current directory.)  */
   if (current_directory[0] != '\0' && argv[0] != 0 && argv[0][0] != '/' && strchr (argv[0], '/') != 0)
     argv[0] = concat (current_directory, "/", argv[0]);
 
-  /* The extra indirection through $(MAKE_COMMAND) is done
-     for hysterical raisins.  */
   (void) define_variable ("MAKE_COMMAND", 12, argv[0], o_default, 0);
   (void) define_variable ("MAKE", 4, "$(MAKE_COMMAND)", o_default, 1);
 

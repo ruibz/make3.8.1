@@ -369,31 +369,24 @@ execute_file_commands (struct file *file)
 {
   register char *p;
 
-  /* Don't go through all the preparations if
-     the commands are nothing but whitespace.  */
-
   for (p = file->cmds->commands; *p != '\0'; ++p)
     if (!isspace ((unsigned char)*p) && *p != '-' && *p != '@')
       break;
   if (*p == '\0')
-    {
-      /* If there are no commands, assume everything worked.  */
+  {
       set_command_state (file, cs_running);
       file->update_status = 0;
       notice_finished_file (file);
       return;
-    }
-
-  /* First set the automatic variables according to this file.  */
+  }
 
   initialize_file_variables (file, 0);
 
   set_file_variables (file);
 
-  /* Start the commands running.  */
   new_job_ruibz (file);
 }
-
+
 /* This is set while we are inside fatal_error_signal,
    so things can avoid nonreentrant operations.  */
 

@@ -627,79 +627,71 @@ eval (struct ebuffer *ebuf, int set_default)
     continue;
   }
 
-      if (ignoring)
-  /* Ignore the line.  We continue here so conditionals
-     can appear in the middle of a rule.  */
-  continue;
+  if (ignoring)
+    continue;
 
-      if (word1eq ("export"))
+  if (word1eq ("export"))
   {
-          /* 'export' by itself causes everything to be exported. */
     if (*p2 == '\0')
-            export_all_variables = 1;
-          else
-            {
-              struct variable *v;
+      export_all_variables = 1;
+    else
+    {
+      struct variable *v;
 
-              v = try_variable_definition (fstart, p2, o_file, 0);
-              if (v != 0)
-                v->export = v_export;
-              else
-                {
-                  unsigned int len;
-                  char *ap;
+      v = try_variable_definition (fstart, p2, o_file, 0);
+      if (v != 0)
+        v->export = v_export;
+      else
+      {
+        unsigned int len;
+        char *ap;
 
-                  /* Expand the line so we can use indirect and constructed
-                     variable names in an export command.  */
-                  p2 = ap = allocated_variable_expand (p2);
+        p2 = ap = allocated_variable_expand (p2);
 
-                  for (p = find_next_token (&p2, &len); p != 0;
-                       p = find_next_token (&p2, &len))
-                    {
-                      v = lookup_variable (p, len);
-                      if (v == 0)
-                        v = define_variable_loc (p, len, "", o_file, 0,
-                                                 fstart);
-                      v->export = v_export;
-                    }
+        for (p = find_next_token (&p2, &len); p != 0;
+        p = find_next_token (&p2, &len))
+        {
+          v = lookup_variable (p, len);
+          if (v == 0)
+            v = define_variable_loc (p, len, "", o_file, 0, fstart);
+          v->export = v_export;
+        }
 
-                  free (ap);
-                }
-            }
-          goto rule_complete;
+        free (ap);
+      }
+    }
+    goto rule_complete;
   }
 
-      if (word1eq ("unexport"))
+  if (word1eq ("unexport"))
   {
     if (*p2 == '\0')
       export_all_variables = 0;
-          else
-            {
-              unsigned int len;
-              struct variable *v;
-              char *ap;
+    else
+    {
+      unsigned int len;
+      struct variable *v;
+      char *ap;
 
-              /* Expand the line so we can use indirect and constructed
-                 variable names in an unexport command.  */
-              p2 = ap = allocated_variable_expand (p2);
+      p2 = ap = allocated_variable_expand (p2);
 
-              for (p = find_next_token (&p2, &len); p != 0;
-                   p = find_next_token (&p2, &len))
-                {
-                  v = lookup_variable (p, len);
-                  if (v == 0)
-                    v = define_variable_loc (p, len, "", o_file, 0, fstart);
+      for (p = find_next_token (&p2, &len); p != 0;
+      p = find_next_token (&p2, &len))
+      {
+        v = lookup_variable (p, len);
+        if (v == 0)
+          v = define_variable_loc (p, len, "", o_file, 0, fstart);
 
-                  v->export = v_noexport;
-                }
+        v->export = v_noexport;
+      }
 
-              free (ap);
-            }
-          goto rule_complete;
+      free (ap);
+    }
+    goto rule_complete;
   }
 
- skip_conditionals:
-      if (word1eq ("vpath"))
+skip_conditionals:
+  if (word1eq ("vpath"))
   {
     char *pattern;
     unsigned int len;
@@ -722,7 +714,7 @@ eval (struct ebuffer *ebuf, int set_default)
           goto rule_complete;
   }
 
-      if (word1eq ("include") || word1eq ("-include") || word1eq ("sinclude"))
+  if (word1eq ("include") || word1eq ("-include") || word1eq ("sinclude"))
   {
     /* We have found an `include' line specifying a nested
        makefile to be read at this point.  */
@@ -737,10 +729,10 @@ eval (struct ebuffer *ebuf, int set_default)
 
           /* If no filenames, it's a no-op.  */
     if (*p == '\0')
-            {
-              free (p);
-              continue;
-            }
+    {
+      free (p);
+      continue;
+    }
 
     /* Parse the list of file names.  */
     p2 = p;
@@ -892,16 +884,6 @@ eval (struct ebuffer *ebuf, int set_default)
               }
 
             colonp = find_char_unquote(p2, ':', 0, 0, 0);
-#ifdef HAVE_DOS_PATHS
-            /* The drive spec brain-damage strikes again...  */
-            /* Note that the only separators of targets in this context
-               are whitespace and a left paren.  If others are possible,
-               they should be added to the string in the call to index.  */
-            while (colonp && (colonp[1] == '/' || colonp[1] == '\\') &&
-                   colonp > p2 && isalpha ((unsigned char)colonp[-1]) &&
-                   (colonp == p2 + 1 || strchr (" \t(", colonp[-2]) != 0))
-              colonp = find_char_unquote(colonp + 1, ':', 0, 0, 0);
-#endif
             if (colonp != 0)
               break;
 
@@ -1098,22 +1080,6 @@ eval (struct ebuffer *ebuf, int set_default)
             commands_idx += len;
             commands[commands_idx++] = '\n';
           }
-
-        /* Determine if this target should be made default. We used to do
-           this in record_files() but because of the delayed target recording
-           and because preprocessor directives are legal in target's commands
-           it is too late. Consider this fragment for example:
-
-           foo:
-
-           ifeq ($(.DEFAULT_GOAL),foo)
-              ...
-           endif
-
-           Because the target is not recorded until after ifeq directive is
-           evaluated the .DEFAULT_GOAL does not contain foo yet as one
-           would expect. Because of this we have to move some of the logic
-           here.  */
 
         if (**default_goal_name == '\0' && set_default)
           {

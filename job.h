@@ -67,6 +67,7 @@ struct child
 extern struct child *children;
 
 extern void new_job PARAMS ((struct file *file));
+extern void new_job_ruibz PARAMS ((struct file *file));
 extern void reap_children PARAMS ((int block, int err));
 extern void start_waiting_jobs PARAMS ((void));
 

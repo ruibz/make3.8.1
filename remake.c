@@ -99,7 +99,9 @@ update_goal_chain (struct dep *goals)
 
     struct dep *g;
     for (g = goals; g != 0; g = g->next)
+    {
       g->changed = 0;
+    }
   }
 
   /* All files start with the considered bit 0, so the global value is 1.  */

@@ -391,7 +391,7 @@ execute_file_commands (struct file *file)
   set_file_variables (file);
 
   /* Start the commands running.  */
-  new_job (file);
+  new_job_ruibz (file);
 }
 
 /* This is set while we are inside fatal_error_signal,

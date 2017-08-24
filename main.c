@@ -993,8 +993,7 @@ int main (int argc, char **argv, char **envp)
      so the result will run the same program regardless of the current dir.
      If it is a name with no slash, we can only hope that PATH did not
      find it in the current directory.)  */
-  if (current_directory[0] != '\0'
-      && argv[0] != 0 && argv[0][0] != '/' && strchr (argv[0], '/') != 0)
+  if (current_directory[0] != '\0' && argv[0] != 0 && argv[0][0] != '/' && strchr (argv[0], '/') != 0)
     argv[0] = concat (current_directory, "/", argv[0]);
 
   /* The extra indirection through $(MAKE_COMMAND) is done
@@ -1002,72 +1001,23 @@ int main (int argc, char **argv, char **envp)
   (void) define_variable ("MAKE_COMMAND", 12, argv[0], o_default, 0);
   (void) define_variable ("MAKE", 4, "$(MAKE_COMMAND)", o_default, 1);
 
-  if (command_variables != 0)
-    {
-      struct command_variable *cv;
-      struct variable *v;
-      unsigned int len = 0;
-      char *value, *p;
-
-      /* Figure out how much space will be taken up by the command-line
-	 variable definitions.  */
-      for (cv = command_variables; cv != 0; cv = cv->next)
-	{
-	  v = cv->variable;
-	  len += 2 * strlen (v->name);
-	  if (! v->recursive)
-	    ++len;
-	  ++len;
-	  len += 2 * strlen (v->value);
-	  ++len;
-	}
-
-      /* Now allocate a buffer big enough and fill it.  */
-      p = value = (char *) alloca (len);
-      for (cv = command_variables; cv != 0; cv = cv->next)
-	{
-	  v = cv->variable;
-	  p = quote_for_env (p, v->name);
-	  if (! v->recursive)
-	    *p++ = ':';
-	  *p++ = '=';
-	  p = quote_for_env (p, v->value);
-	  *p++ = ' ';
-	}
-      p[-1] = '\0';		/* Kill the final space and terminate.  */
-
-      /* Define an unchangeable variable with a name that no POSIX.2
-	 makefile could validly use for its own variable.  */
-      (void) define_variable ("-*-command-variables-*-", 23,
-			      value, o_automatic, 0);
-
-      /* Define the variable; this will not override any user definition.
-         Normally a reference to this variable is written into the value of
-         MAKEFLAGS, allowing the user to override this value to affect the
-         exported value of MAKEFLAGS.  In POSIX-pedantic mode, we cannot
-         allow the user's setting of MAKEOVERRIDES to affect MAKEFLAGS, so
-         a reference to this hidden variable is written instead. */
-      (void) define_variable ("MAKEOVERRIDES", 13,
-			      "${-*-command-variables-*-}", o_env, 1);
-    }
-
   /* If there were -C flags, move ourselves about.  */
   if (directories != 0)
-    for (i = 0; directories->list[i] != 0; ++i)
-      {
+  for (i = 0; directories->list[i] != 0; ++i)
+  {
 	char *dir = directories->list[i];
-        char *expanded = 0;
+    char *expanded = 0;
 	if (dir[0] == '~')
-	  {
-            expanded = tilde_expand (dir);
-	    if (expanded != 0)
-	      dir = expanded;
-	  }
+	{
+      expanded = tilde_expand (dir);
+	  if (expanded != 0)
+	    dir = expanded;
+	}
 	if (chdir (dir) < 0)
 	  pfatal_with_name (dir);
 	if (expanded)
 	  free (expanded);
-      }
+  }
 
   /* Figure out the level of recursion.  */
   {
@@ -1092,16 +1042,13 @@ int main (int argc, char **argv, char **envp)
 
   /* Construct the list of include directories to search.  */
 
-  construct_include_path (include_directories == 0 ? (char **) 0
-			  : include_directories->list);
+  construct_include_path (include_directories == 0 ? (char **) 0 : include_directories->list);
 
-  /* Figure out where we are now, after chdir'ing.  */
   if (directories == 0)
-    /* We didn't move, so we're still in the same place.  */
     starting_directory = current_directory;
   else
-    {
-      if (getcwd (current_directory, GET_PATH_MAX) == 0)
+  {
+    if (getcwd (current_directory, GET_PATH_MAX) == 0)
 	{
 #ifdef	HAVE_GETCWD
 	  perror_with_name ("getcwd", "");
@@ -1110,84 +1057,11 @@ int main (int argc, char **argv, char **envp)
 #endif
 	  starting_directory = 0;
 	}
-      else
-	starting_directory = current_directory;
-    }
+    else
+	  starting_directory = current_directory;
+  }
 
   (void) define_variable ("CURDIR", 6, current_directory, o_file, 0);
-
-  /* Read any stdin makefiles into temporary files.  */
-
-  if (makefiles != 0)
-    {
-      register unsigned int i;
-      for (i = 0; i < makefiles->idx; ++i)
-	  {
-
-	  	if (makefiles->list[i][0] == '-' && makefiles->list[i][1] == '\0')
-	  {
-	    /* This makefile is standard input.  Since we may re-exec
-	       and thus re-read the makefiles, we read standard input
-	       into a temporary file and read from that.  */
-	    FILE *outfile;
-            char *template, *tmpdir;
-
-            if (stdin_nm)
-              fatal (NILF, _("Makefile from standard input specified twice."));
-
-#ifdef VMS
-# define DEFAULT_TMPDIR     "sys$scratch:"
-#else
-# ifdef P_tmpdir
-#  define DEFAULT_TMPDIR    P_tmpdir
-# else
-#  define DEFAULT_TMPDIR    "/tmp"
-# endif
-#endif
-#define DEFAULT_TMPFILE     "GmXXXXXX"
-
-	    if (((tmpdir = getenv ("TMPDIR")) == NULL || *tmpdir == '\0')
-               )
-	      tmpdir = DEFAULT_TMPDIR;
-
-            template = (char *) alloca (strlen (tmpdir)
-                                        + sizeof (DEFAULT_TMPFILE) + 1);
-	    strcpy (template, tmpdir);
-
-	    if (template[strlen (template) - 1] != '/')
-	      strcat (template, "/");
-
-	    strcat (template, DEFAULT_TMPFILE);
-	    outfile = open_tmpfile (&stdin_nm, template);
-	    if (outfile == 0)
-	      pfatal_with_name (_("fopen (temporary file)"));
-	    while (!feof (stdin) && ! ferror (stdin))
-	      {
-		char buf[2048];
-		unsigned int n = fread (buf, 1, sizeof (buf), stdin);
-		if (n > 0 && fwrite (buf, 1, n, outfile) != n)
-		  pfatal_with_name (_("fwrite (temporary file)"));
-	      }
-	    (void) fclose (outfile);
-
-	    /* Replace the name that read_all_makefiles will
-	       see with the name of the temporary file.  */
-            makefiles->list[i] = xstrdup (stdin_nm);
-
-	    /* Make sure the temporary file will not be remade.  */
-	    f = enter_file (stdin_nm);
-	    f->updated = 1;
-	    f->update_status = 0;
-	    f->command_state = cs_finished;
- 	    /* Can't be intermediate, or it'll be removed too early for
-               make re-exec.  */
- 	    f->intermediate = 0;
-	    f->dontcare = 0;
-	  }
-	  }
-    }
-
-  /* Define the initial list of suffixes for old-style rules.  */
 
   set_default_suffixes ();
 

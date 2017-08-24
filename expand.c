@@ -547,11 +547,6 @@ allocated_variable_expand_for_file (char *line, struct file *file)
 
   value = variable_expand_for_file (line, file);
 
-#if 0
-  /* Waste a little memory and save time.  */
-  value = xrealloc (value, strlen (value))
-#endif
-
   variable_buffer = obuf;
   variable_buffer_length = olen;
 

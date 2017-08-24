@@ -1094,8 +1094,7 @@ int main (int argc, char **argv, char **envp)
 
   /* Read all the makefiles.  */
 
-  read_makefiles
-    = read_all_makefiles (makefiles == 0 ? (char **) 0 : makefiles->list);
+  read_makefiles = read_all_makefiles (makefiles == 0 ? (char **) 0 : makefiles->list);
 
   /* Decode switches again, in case the variables were set by the makefile.  */
   decode_env_switches (STRING_SIZE_TUPLE ("MAKEFLAGS"));

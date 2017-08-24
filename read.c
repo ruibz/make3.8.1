@@ -181,11 +181,11 @@ read_all_makefiles (char **makefiles)
     p = value;
 
     while ((name = find_next_token (&p, &length)) != 0)
-      {
-	if (*p != '\0')
-	  *p++ = '\0';
-	eval_makefile (name, RM_NO_DEFAULT_GOAL|RM_INCLUDED|RM_DONTCARE);
-      }
+    {
+	    if (*p != '\0')
+	      *p++ = '\0';
+	    eval_makefile (name, RM_NO_DEFAULT_GOAL|RM_INCLUDED|RM_DONTCARE);
+    }
 
     free (value);
   }
@@ -193,58 +193,45 @@ read_all_makefiles (char **makefiles)
   /* Read makefiles specified with -f switches.  */
 
   if (makefiles != 0)
-    while (*makefiles != 0)
-      {
-	struct dep *tail = read_makefiles;
-	register struct dep *d;
+  while (*makefiles != 0)
+  {
+	  struct dep *tail = read_makefiles;
+	  register struct dep *d;
 
-	if (! eval_makefile (*makefiles, 0))
-	  perror_with_name ("", *makefiles);
+	  if (! eval_makefile (*makefiles, 0))
+	    perror_with_name ("", *makefiles);
 
-	/* Find the right element of read_makefiles.  */
-	d = read_makefiles;
-	while (d->next != tail)
-	  d = d->next;
+	  /* Find the right element of read_makefiles.  */
+	  d = read_makefiles;
+	  while (d->next != tail)
+	    d = d->next;
 
-	/* Use the storage read_makefile allocates.  */
-	*makefiles = dep_name (d);
-	++num_makefiles;
-	++makefiles;
-      }
-
-  /* If there were no -f switches, try the default names.  */
+	  /* Use the storage read_makefile allocates.  */
+	  *makefiles = dep_name (d);
+	  ++num_makefiles;
+	  ++makefiles;
+  }
 
   if (num_makefiles == 0)
-    {
-      static char *default_makefiles[] =
-#ifdef VMS
-	/* all lower case since readdir() (the vms version) 'lowercasifies' */
-	{ "makefile.vms", "gnumakefile.", "makefile.", 0 };
-#else
-#ifdef _AMIGA
-	{ "GNUmakefile", "Makefile", "SMakefile", 0 };
-#else /* !Amiga && !VMS */
-	{ "GNUmakefile", "makefile", "Makefile", 0 };
-#endif /* AMIGA */
-#endif /* VMS */
-      register char **p = default_makefiles;
-      while (*p != 0 && !file_exists_p (*p))
-	++p;
+  {
+    static char *default_makefiles[] = { "GNUmakefile", "makefile", "Makefile", 0 };
+    register char **p = default_makefiles;
+    while (*p != 0 && !file_exists_p (*p))
+	    ++p;
 
-      if (*p != 0)
-	{
-	  if (! eval_makefile (*p, 0))
-	    perror_with_name ("", *p);
-	}
-      else
-	{
-	  /* No default makefile was found.  Add the default makefiles to the
-	     `read_makefiles' chain so they will be updated if possible.  */
-	  struct dep *tail = read_makefiles;
-	  /* Add them to the tail, after any MAKEFILES variable makefiles.  */
-	  while (tail != 0 && tail->next != 0)
-	    tail = tail->next;
-	  for (p = default_makefiles; *p != 0; ++p)
+    if (*p != 0)
+	  {
+      // printf("\nruibz,test,p,%s\n", *p);
+	    if (!eval_makefile (*p, 0))
+	      perror_with_name ("", *p);
+	  }
+    else
+	  {
+      struct dep *tail = read_makefiles;
+	    /* Add them to the tail, after any MAKEFILES variable makefiles.  */
+	    while (tail != 0 && tail->next != 0)
+	      tail = tail->next;
+	    for (p = default_makefiles; *p != 0; ++p)
 	    {
 	      struct dep *d = alloc_dep ();
 	      d->file = enter_file (*p);
@@ -253,19 +240,19 @@ read_all_makefiles (char **makefiles)
 		 made, and main not to die if we can't make this file.  */
 	      d->changed = RM_DONTCARE;
 	      if (tail == 0)
-		read_makefiles = d;
+		      read_makefiles = d;
 	      else
-		tail->next = d;
+		      tail->next = d;
 	      tail = d;
 	    }
-	  if (tail != 0)
-	    tail->next = 0;
-	}
-    }
+	    if (tail != 0)
+	      tail->next = 0;
+	  }
+  }
 
   return read_makefiles;
 }
-
+
 /* Install a new conditional and return the previous one.  */
 
 static struct conditionals *
@@ -293,7 +280,7 @@ restore_conditionals (struct conditionals *saved)
   /* Restore state.  */
   conditionals = saved;
 }
-
+
 static int
 eval_makefile (char *filename, int flags)
 {
@@ -309,29 +296,27 @@ eval_makefile (char *filename, int flags)
   ebuf.floc.lineno = 1;
 
   if (ISDB (DB_VERBOSE))
-    {
-      printf (_("Reading makefile `%s'"), filename);
-      if (flags & RM_NO_DEFAULT_GOAL)
-	printf (_(" (no default goal)"));
-      if (flags & RM_INCLUDED)
-	printf (_(" (search path)"));
-      if (flags & RM_DONTCARE)
-	printf (_(" (don't care)"));
-      if (flags & RM_NO_TILDE)
-	printf (_(" (no ~ expansion)"));
-      puts ("...");
-    }
-
-  /* First, get a stream to read.  */
+  {
+    printf (_("Reading makefile `%s'"), filename);
+    if (flags & RM_NO_DEFAULT_GOAL)
+      printf (_(" (no default goal)"));
+    if (flags & RM_INCLUDED)
+	    printf (_(" (search path)"));
+    if (flags & RM_DONTCARE)
+	    printf (_(" (don't care)"));
+    if (flags & RM_NO_TILDE)
+	    printf (_(" (no ~ expansion)"));
+    puts ("...");
+  }
 
   /* Expand ~ in FILENAME unless it came from `include',
      in which case it was already done.  */
   if (!(flags & RM_NO_TILDE) && filename[0] == '~')
-    {
-      expanded = tilde_expand (filename);
-      if (expanded != 0)
-	filename = expanded;
-    }
+  {
+    expanded = tilde_expand (filename);
+    if (expanded != 0)
+	    filename = expanded;
+  }
 
   ebuf.fp = fopen (filename, "r");
   /* Save the error code so we print the right message later.  */
@@ -341,23 +326,24 @@ eval_makefile (char *filename, int flags)
      the `MAKEFILES' variable or an included makefile,
      search the included makefile search path for this makefile.  */
   if (ebuf.fp == 0 && (flags & RM_INCLUDED) && *filename != '/')
-    {
-      register unsigned int i;
-      for (i = 0; include_directories[i] != 0; ++i)
-	{
-	  included = concat (include_directories[i], "/", filename);
-	  ebuf.fp = fopen (included, "r");
-	  if (ebuf.fp)
+  {
+    register unsigned int i;
+    for (i = 0; include_directories[i] != 0; ++i)
+	  {
+	    included = concat (include_directories[i], "/", filename);
+	    ebuf.fp = fopen (included, "r");
+	    if (ebuf.fp)
 	    {
 	      filename = included;
 	      break;
 	    }
-          free (included);
-	}
-      /* If we're not using it, we already freed it above.  */
-      if (filename != included)
-        included = 0;
-    }
+      free (included);
+	  }
+
+    /* If we're not using it, we already freed it above.  */
+    if (filename != included)
+      included = 0;
+  }
 
   /* Add FILENAME to the chain of read makefiles.  */
   deps = alloc_dep ();
@@ -379,19 +365,13 @@ eval_makefile (char *filename, int flags)
   /* If the makefile can't be found at all, give up entirely.  */
 
   if (ebuf.fp == 0)
-    {
-      /* If we did some searching, errno has the error from the last
-	 attempt, rather from FILENAME itself.  Restore it in case the
-	 caller wants to use it in a message.  */
-      errno = makefile_errno;
-      return 0;
-    }
+  {
+    errno = makefile_errno;
+    return 0;
+  }
 
   /* Add this makefile to the list. */
-  do_variable_definition (&ebuf.floc, "MAKEFILE_LIST", filename, o_file,
-                          f_append, 0);
-
-  /* Evaluate the makefile */
+  do_variable_definition (&ebuf.floc, "MAKEFILE_LIST", filename, o_file, f_append, 0);
 
   ebuf.size = 200;
   ebuf.buffer = ebuf.bufnext = ebuf.bufstart = xmalloc (ebuf.size);

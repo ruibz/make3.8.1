@@ -144,7 +144,6 @@ static enum make_word_type get_next_mword PARAMS ((char *buffer, char *delim,
 static void remove_comments PARAMS ((char *line));
 static char *find_char_unquote PARAMS ((char *string, int stop1,
                                         int stop2, int blank, int ignorevars));
-
 /* Read in all the makefiles and return the chain of their names.  */
 
 struct dep *
@@ -174,7 +173,6 @@ read_all_makefiles (char **makefiles)
       warn_undefined_variables_flag = 0;
 
       value = allocated_variable_expand ("$(MAKEFILES)");
-
       warn_undefined_variables_flag = save;
     }
 

@@ -981,6 +981,7 @@ start_job_command (struct child *child)
   if (!child->command_ptr)
     goto next_command;
 
+
   /* Combine the flags parsed for the line itself with
      the flags specified globally for this target.  */
   flags = (child->file->command_flags
@@ -1489,6 +1490,8 @@ new_job (struct file *file)
   char **lines;
   register unsigned int i;
 
+  printf("\nruibz,test,file,%s\n", file->name);
+
   /* Let any previously decided-upon jobs that are waiting
      for the load to go down start before this new one.  */
   start_waiting_jobs ();
@@ -1518,6 +1521,7 @@ new_job (struct file *file)
 	 IN gets ahead of OUT.  */
 
       in = out = cmds->command_lines[i];
+        printf("\nruibz,test,in,%s\n", in);
       while ((ref = strchr (in, '$')) != 0)
 	{
 	  ++ref;		/* Move past the $.  */
@@ -1595,10 +1599,10 @@ new_job (struct file *file)
 	 Copy the remaining uninteresting text to the output.  */
       if (out != in)
 	strcpy (out, in);
-
       /* Finally, expand the line.  */
       lines[i] = allocated_variable_expand_for_file (cmds->command_lines[i],
 						     file);
+       printf("\nruibz,test,expand,%s\n", lines[i]);
     }
 
   /* Start the command sequence, record it in a new

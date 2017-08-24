@@ -223,8 +223,8 @@ define_variable_in_set (const char *name, unsigned int length,
   v->per_target = 0;
   v->append = 0;
   v->export = v_default;
-
   v->exportable = 1;
+
   if (*name != '_' && (*name < 'A' || *name > 'Z')
       && (*name < 'a' || *name > 'z'))
     v->exportable = 0;
@@ -241,7 +241,7 @@ define_variable_in_set (const char *name, unsigned int length,
 
   return v;
 }
-
+
 /* If the variable passed in is "special", handle its special nature.
    Currently there are two such variables, both used for introspection:
    .VARIABLES expands to a list of all the variables defined in this instance
@@ -985,7 +985,7 @@ target_environment (struct file *file)
 
   return result_0;
 }
-
+
 /* Given a variable, a value, and a flavor, define the variable.
    See the try_variable_definition() function for details on the parameters. */
 
@@ -1240,7 +1240,7 @@ parse_variable_definition (struct variable *v, char *line)
     {
       c = *p++;
       if (c == '\0' || c == '#')
-	return 0;
+	      return 0;
       if (c == '=')
 	{
 	  end = p - 1;
@@ -1317,7 +1317,7 @@ parse_variable_definition (struct variable *v, char *line)
 
   return v;
 }
-
+
 /* Try to interpret LINE (a null-terminated string) as a variable definition.
 
    ORIGIN may be o_file, o_override, o_env, o_env_override,
@@ -1353,7 +1353,7 @@ try_variable_definition (const struct floc *flocp, char *line,
 
   return vp;
 }
-
+
 /* Print information for variable V, prefixing it with PREFIX.  */
 
 static void

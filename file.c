@@ -143,7 +143,6 @@ enter_file (char *name)
 #endif
 
   assert (*name != '\0');
-
 #if defined(VMS) && !defined(WANT_CASE_SENSITIVE_TARGETS)
   if (*name != '.')
     {

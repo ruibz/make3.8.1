@@ -858,7 +858,6 @@ open_tmpfile(char **name, const char *template)
 #endif
   *name = xmalloc (TEMPLATE_LEN + 1);
   strcpy (*name, template);
-
 #if defined HAVE_MKSTEMP && defined HAVE_FDOPEN
   /* It's safest to use mkstemp(), if we can.  */
   fd = mkstemp (*name);
@@ -885,14 +884,7 @@ open_tmpfile(char **name, const char *template)
 #endif
 }
 
-
-#ifdef _AMIGA
-int
-main (int argc, char **argv)
-#else
-int
-main (int argc, char **argv, char **envp)
-#endif
+int main (int argc, char **argv, char **envp)
 {
   static char *stdin_nm = 0;
   struct file *f;
@@ -902,130 +894,15 @@ main (int argc, char **argv, char **envp)
   struct dep *read_makefiles;
   PATH_VAR (current_directory);
   unsigned int restarts = 0;
-#ifdef WINDOWS32
-  char *unix_path = NULL;
-  char *windows32_path = NULL;
 
-  SetUnhandledExceptionFilter(handle_runtime_exceptions);
-
-  /* start off assuming we have no shell */
-  unixy_shell = 0;
-  no_default_sh_exe = 1;
-#endif
-
-#ifdef SET_STACK_SIZE
- /* Get rid of any avoidable limit on stack size.  */
-  {
-    struct rlimit rlim;
-
-    /* Set the stack limit huge so that alloca does not fail.  */
-    if (getrlimit (RLIMIT_STACK, &rlim) == 0)
-      {
-        rlim.rlim_cur = rlim.rlim_max;
-        setrlimit (RLIMIT_STACK, &rlim);
-      }
-  }
-#endif
-
-#ifdef HAVE_ATEXIT
-  atexit (close_stdout);
-#endif
-
-  /* Needed for OS/2 */
   initialize_main(&argc, &argv);
 
   default_goal_file = 0;
   reading_file = 0;
 
-#if defined (__MSDOS__) && !defined (_POSIX_SOURCE)
-  /* Request the most powerful version of `system', to
-     make up for the dumb default shell.  */
-  __system_flags = (__system_redirect
-		    | __system_use_shell
-		    | __system_allow_multiple_cmds
-		    | __system_allow_long_cmds
-		    | __system_handle_null_commands
-		    | __system_emulate_chdir);
-
-#endif
-
-  /* Set up gettext/internationalization support.  */
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
-
-#ifdef	POSIX
-  sigemptyset (&fatal_signal_set);
-#define	ADD_SIG(sig)	sigaddset (&fatal_signal_set, sig)
-#else
-#ifdef	HAVE_SIGSETMASK
-  fatal_signal_mask = 0;
-#define	ADD_SIG(sig)	fatal_signal_mask |= sigmask (sig)
-#else
-#define	ADD_SIG(sig)
-#endif
-#endif
-
-#define	FATAL_SIG(sig)							      \
-  if (bsd_signal (sig, fatal_error_signal) == SIG_IGN)			      \
-    bsd_signal (sig, SIG_IGN);						      \
-  else									      \
-    ADD_SIG (sig);
-
-#ifdef SIGHUP
-  FATAL_SIG (SIGHUP);
-#endif
-#ifdef SIGQUIT
-  FATAL_SIG (SIGQUIT);
-#endif
-  FATAL_SIG (SIGINT);
-  FATAL_SIG (SIGTERM);
-
-#ifdef __MSDOS__
-  /* Windows 9X delivers FP exceptions in child programs to their
-     parent!  We don't want Make to die when a child divides by zero,
-     so we work around that lossage by catching SIGFPE.  */
-  FATAL_SIG (SIGFPE);
-#endif
-
-#ifdef	SIGDANGER
-  FATAL_SIG (SIGDANGER);
-#endif
-#ifdef SIGXCPU
-  FATAL_SIG (SIGXCPU);
-#endif
-#ifdef SIGXFSZ
-  FATAL_SIG (SIGXFSZ);
-#endif
-
-#undef	FATAL_SIG
-
-  /* Do not ignore the child-death signal.  This must be done before
-     any children could possibly be created; otherwise, the wait
-     functions won't work on systems with the SVR4 ECHILD brain
-     damage, if our invoker is ignoring this signal.  */
-
-#ifdef HAVE_WAIT_NOHANG
-# if defined SIGCHLD
-  (void) bsd_signal (SIGCHLD, SIG_DFL);
-# endif
-# if defined SIGCLD && SIGCLD != SIGCHLD
-  (void) bsd_signal (SIGCLD, SIG_DFL);
-# endif
-#endif
-
-  /* Make sure stdout is line-buffered.  */
-
-#ifdef HAVE_SETVBUF
-# ifdef SETVBUF_REVERSED
-  setvbuf (stdout, _IOLBF, xmalloc (BUFSIZ), BUFSIZ);
-# else	/* setvbuf not reversed.  */
-  /* Some buggy systems lose if we pass 0 instead of allocating ourselves.  */
-  setvbuf (stdout, (char *) 0, _IOLBF, BUFSIZ);
-# endif	/* setvbuf reversed.  */
-#elif HAVE_SETLINEBUF
-  setlinebuf (stdout);
-#endif	/* setlinebuf missing.  */
 
   /* Figure out where this program lives.  */
 
@@ -1034,46 +911,13 @@ main (int argc, char **argv, char **envp)
   if (argv[0][0] == '\0')
     program = "make";
   else
-    {
-#ifdef VMS
-      program = strrchr (argv[0], ']');
-#else
-      program = strrchr (argv[0], '/');
-#endif
-#if defined(__MSDOS__) || defined(__EMX__)
-      if (program == 0)
-	program = strrchr (argv[0], '\\');
-      else
-	{
-	  /* Some weird environments might pass us argv[0] with
-	     both kinds of slashes; we must find the rightmost.  */
-	  char *p = strrchr (argv[0], '\\');
-	  if (p && p > program)
-	    program = p;
-	}
-      if (program == 0 && argv[0][1] == ':')
-	program = argv[0] + 1;
-#endif
-#ifdef WINDOWS32
-      if (program == 0)
-        {
-          /* Extract program from full path */
-          int argv0_len;
-          program = strrchr (argv[0], '\\');
-          if (program)
-            {
-              argv0_len = strlen(program);
-              if (argv0_len > 4 && streq (&program[argv0_len - 4], ".exe"))
-                /* Remove .exe extension */
-                program[argv0_len - 4] = '\0';
-            }
-        }
-#endif
-      if (program == 0)
-	program = argv[0];
-      else
-	++program;
-    }
+  {
+    program = strrchr (argv[0], '/');
+    if (program == 0)
+	  program = argv[0];
+    else
+	  ++program;
+  }
 
   /* Set up to access user data (files).  */
   user_access ();
@@ -1082,11 +926,7 @@ main (int argc, char **argv, char **envp)
 
   /* Figure out where we are.  */
 
-#ifdef WINDOWS32
-  if (getcwd_fs (current_directory, GET_PATH_MAX) == 0)
-#else
   if (getcwd (current_directory, GET_PATH_MAX) == 0)
-#endif
     {
 #ifdef	HAVE_GETCWD
       perror_with_name ("getcwd", "");
@@ -1098,14 +938,8 @@ main (int argc, char **argv, char **envp)
     }
   else
     directory_before_chdir = xstrdup (current_directory);
-#ifdef  __MSDOS__
-  /* Make sure we will return to the initial directory, come what may.  */
-  atexit (msdos_return_to_initial_directory);
-#endif
 
-  /* Initialize the special variables.  */
   define_variable (".VARIABLES", 10, "", o_default, 0)->special = 1;
-  /* define_variable (".TARGETS", 8, "", o_default, 0)->special = 1; */
 
   /* Set up .FEATURES */
   define_variable (".FEATURES", 9,
@@ -1113,10 +947,6 @@ main (int argc, char **argv, char **envp)
                    o_default, 0);
 #ifndef NO_ARCHIVES
   do_variable_definition (NILF, ".FEATURES", "archives",
-                          o_default, f_append, 0);
-#endif
-#ifdef MAKE_JOBSERVER
-  do_variable_definition (NILF, ".FEATURES", "jobserver",
                           o_default, f_append, 0);
 #endif
 #ifdef MAKE_SYMLINKS
@@ -1128,7 +958,6 @@ main (int argc, char **argv, char **envp)
      done before $(MAKE) is figured out so its definitions will not be
      from the environment.  */
 
-#ifndef _AMIGA
   for (i = 0; envp[i] != 0; ++i)
     {
       int do_not_define = 0;
@@ -1136,15 +965,6 @@ main (int argc, char **argv, char **envp)
 
       while (*ep != '\0' && *ep != '=')
         ++ep;
-#ifdef WINDOWS32
-      if (!unix_path && strneq(envp[i], "PATH=", 5))
-        unix_path = ep+1;
-      else if (!strnicmp(envp[i], "Path=", 5)) {
-        do_not_define = 1; /* it gets defined after loop exits */
-        if (!windows32_path)
-          windows32_path = ep+1;
-      }
-#endif
       /* The result of pointer arithmetic is cast to unsigned int for
 	 machines where ptrdiff_t is a different size that doesn't widen
 	 the same.  */
@@ -1165,9 +985,7 @@ main (int argc, char **argv, char **envp)
              makefile won't change the value of SHELL given to subprocesses  */
           if (streq (v->name, "SHELL"))
             {
-#ifndef __MSDOS__
               v->export = v_noexport;
-#endif
               shell_var.name = "SHELL";
               shell_var.value = xstrdup (ep + 1);
             }
@@ -1180,65 +998,11 @@ main (int argc, char **argv, char **envp)
             }
         }
     }
-#ifdef WINDOWS32
-    /* If we didn't find a correctly spelled PATH we define PATH as
-     * either the first mispelled value or an empty string
-     */
-    if (!unix_path)
-      define_variable("PATH", 4,
-                      windows32_path ? windows32_path : "",
-                      o_env, 1)->export = v_export;
-#endif
-#else /* For Amiga, read the ENV: device, ignoring all dirs */
-    {
-	BPTR env, file, old;
-	char buffer[1024];
-	int len;
-	__aligned struct FileInfoBlock fib;
-
-	env = Lock ("ENV:", ACCESS_READ);
-	if (env)
-	{
-	    old = CurrentDir (DupLock(env));
-	    Examine (env, &fib);
-
-	    while (ExNext (env, &fib))
-	    {
-		if (fib.fib_DirEntryType < 0) /* File */
-		{
-		    /* Define an empty variable. It will be filled in
-			variable_lookup(). Makes startup quite a bit
-			faster. */
-			define_variable (fib.fib_FileName,
-			    strlen (fib.fib_FileName),
-			"", o_env, 1)->export = v_export;
-		}
-	    }
-	    UnLock (env);
-	    UnLock(CurrentDir(old));
-	}
-    }
-#endif
 
   /* Decode the switches.  */
 
   decode_env_switches (STRING_SIZE_TUPLE ("MAKEFLAGS"));
-#if 0
-  /* People write things like:
-     	MFLAGS="CC=gcc -pipe" "CFLAGS=-g"
-     and we set the -p, -i and -e switches.  Doesn't seem quite right.  */
-  decode_env_switches (STRING_SIZE_TUPLE ("MFLAGS"));
-#endif
   decode_switches (argc, argv, 0);
-#ifdef WINDOWS32
-  if (suspend_flag) {
-        fprintf(stderr, "%s (pid = %ld)\n", argv[0], GetCurrentProcessId());
-        fprintf(stderr, _("%s is suspending for 30 seconds..."), argv[0]);
-        Sleep(30 * 1000);
-        fprintf(stderr, _("done sleep(30). Continuing.\n"));
-  }
-#endif
-
   decode_debug_flags ();
 
   /* Set always_make_flag if -B was given and we've not restarted already.  */
@@ -1254,53 +1018,14 @@ main (int argc, char **argv, char **envp)
         die (0);
     }
 
-#ifndef VMS
   /* Set the "MAKE_COMMAND" variable to the name we were invoked with.
      (If it is a relative pathname with a slash, prepend our directory name
      so the result will run the same program regardless of the current dir.
      If it is a name with no slash, we can only hope that PATH did not
      find it in the current directory.)  */
-#ifdef WINDOWS32
-  /*
-   * Convert from backslashes to forward slashes for
-   * programs like sh which don't like them. Shouldn't
-   * matter if the path is one way or the other for
-   * CreateProcess().
-   */
-  if (strpbrk(argv[0], "/:\\") ||
-      strstr(argv[0], "..") ||
-      strneq(argv[0], "//", 2))
-    argv[0] = xstrdup(w32ify(argv[0],1));
-#else /* WINDOWS32 */
-#if defined (__MSDOS__) || defined (__EMX__)
-  if (strchr (argv[0], '\\'))
-    {
-      char *p;
-
-      argv[0] = xstrdup (argv[0]);
-      for (p = argv[0]; *p; p++)
-	if (*p == '\\')
-	  *p = '/';
-    }
-  /* If argv[0] is not in absolute form, prepend the current
-     directory.  This can happen when Make is invoked by another DJGPP
-     program that uses a non-absolute name.  */
-  if (current_directory[0] != '\0'
-      && argv[0] != 0
-      && (argv[0][0] != '/' && (argv[0][0] == '\0' || argv[0][1] != ':'))
-#ifdef __EMX__
-      /* do not prepend cwd if argv[0] contains no '/', e.g. "make" */
-      && (strchr (argv[0], '/') != 0 || strchr (argv[0], '\\') != 0)
-# endif
-      )
-    argv[0] = concat (current_directory, "/", argv[0]);
-#else  /* !__MSDOS__ */
   if (current_directory[0] != '\0'
       && argv[0] != 0 && argv[0][0] != '/' && strchr (argv[0], '/') != 0)
     argv[0] = concat (current_directory, "/", argv[0]);
-#endif /* !__MSDOS__ */
-#endif /* WINDOWS32 */
-#endif
 
   /* The extra indirection through $(MAKE_COMMAND) is done
      for hysterical raisins.  */
@@ -1368,35 +1093,12 @@ main (int argc, char **argv, char **envp)
 	    if (expanded != 0)
 	      dir = expanded;
 	  }
-#ifdef WINDOWS32
-        /* WINDOWS32 chdir() doesn't work if the directory has a trailing '/'
-           But allow -C/ just in case someone wants that.  */
-        {
-          char *p = dir + strlen (dir) - 1;
-          while (p > dir && (p[0] == '/' || p[0] == '\\'))
-            --p;
-          p[1] = '\0';
-        }
-#endif
 	if (chdir (dir) < 0)
 	  pfatal_with_name (dir);
 	if (expanded)
 	  free (expanded);
       }
 
-#ifdef WINDOWS32
-  /*
-   * THIS BLOCK OF CODE MUST COME AFTER chdir() CALL ABOVE IN ORDER
-   * TO NOT CONFUSE THE DEPENDENCY CHECKING CODE IN implicit.c.
-   *
-   * The functions in dir.c can incorrectly cache information for "."
-   * before we have changed directory and this can cause file
-   * lookups to fail because the current directory (.) was pointing
-   * at the wrong place when it was first evaluated.
-   */
-   no_default_sh_exe = !find_and_set_default_shell(NULL);
-
-#endif /* WINDOWS32 */
   /* Figure out the level of recursion.  */
   {
     struct variable *v = lookup_variable (STRING_SIZE_TUPLE (MAKELEVEL_NAME));
@@ -1429,11 +1131,7 @@ main (int argc, char **argv, char **envp)
     starting_directory = current_directory;
   else
     {
-#ifdef WINDOWS32
-      if (getcwd_fs (current_directory, GET_PATH_MAX) == 0)
-#else
       if (getcwd (current_directory, GET_PATH_MAX) == 0)
-#endif
 	{
 #ifdef	HAVE_GETCWD
 	  perror_with_name ("getcwd", "");
@@ -1454,7 +1152,9 @@ main (int argc, char **argv, char **envp)
     {
       register unsigned int i;
       for (i = 0; i < makefiles->idx; ++i)
-	if (makefiles->list[i][0] == '-' && makefiles->list[i][1] == '\0')
+	  {
+
+	  	if (makefiles->list[i][0] == '-' && makefiles->list[i][1] == '\0')
 	  {
 	    /* This makefile is standard input.  Since we may re-exec
 	       and thus re-read the makefiles, we read standard input
@@ -1477,11 +1177,6 @@ main (int argc, char **argv, char **envp)
 #define DEFAULT_TMPFILE     "GmXXXXXX"
 
 	    if (((tmpdir = getenv ("TMPDIR")) == NULL || *tmpdir == '\0')
-#if defined (__MSDOS__) || defined (WINDOWS32) || defined (__EMX__)
-                /* These are also used commonly on these platforms.  */
-                && ((tmpdir = getenv ("TEMP")) == NULL || *tmpdir == '\0')
-                && ((tmpdir = getenv ("TMP")) == NULL || *tmpdir == '\0')
-#endif
                )
 	      tmpdir = DEFAULT_TMPDIR;
 
@@ -1489,15 +1184,8 @@ main (int argc, char **argv, char **envp)
                                         + sizeof (DEFAULT_TMPFILE) + 1);
 	    strcpy (template, tmpdir);
 
-#ifdef HAVE_DOS_PATHS
-	    if (strchr ("/\\", template[strlen (template) - 1]) == NULL)
-	      strcat (template, "/");
-#else
-# ifndef VMS
 	    if (template[strlen (template) - 1] != '/')
 	      strcat (template, "/");
-# endif /* !VMS */
-#endif /* !HAVE_DOS_PATHS */
 
 	    strcat (template, DEFAULT_TMPFILE);
 	    outfile = open_tmpfile (&stdin_nm, template);
@@ -1526,38 +1214,8 @@ main (int argc, char **argv, char **envp)
  	    f->intermediate = 0;
 	    f->dontcare = 0;
 	  }
+	  }
     }
-
-#ifndef __EMX__ /* Don't use a SIGCHLD handler for OS/2 */
-#if defined(MAKE_JOBSERVER) || !defined(HAVE_WAIT_NOHANG)
-  /* Set up to handle children dying.  This must be done before
-     reading in the makefiles so that `shell' function calls will work.
-
-     If we don't have a hanging wait we have to fall back to old, broken
-     functionality here and rely on the signal handler and counting
-     children.
-
-     If we're using the jobs pipe we need a signal handler so that
-     SIGCHLD is not ignored; we need it to interrupt the read(2) of the
-     jobserver pipe in job.c if we're waiting for a token.
-
-     If none of these are true, we don't need a signal handler at all.  */
-  {
-    extern RETSIGTYPE child_handler PARAMS ((int sig));
-# if defined SIGCHLD
-    bsd_signal (SIGCHLD, child_handler);
-# endif
-# if defined SIGCLD && SIGCLD != SIGCHLD
-    bsd_signal (SIGCLD, child_handler);
-# endif
-  }
-#endif
-#endif
-
-  /* Let the user send us SIGUSR1 to toggle the -d flag during the run.  */
-#ifdef SIGUSR1
-  bsd_signal (SIGUSR1, debug_signal_handler);
-#endif
 
   /* Define the initial list of suffixes for old-style rules.  */
 

@@ -278,6 +278,7 @@ hash_rehash (struct hash_table *ht)
 void
 hash_print_stats (struct hash_table *ht, FILE *out_FILE)
 {
+  return;
   /* GKM FIXME: honor NO_FLOAT */
   fprintf (out_FILE, _("Load=%ld/%ld=%.0f%%, "), ht->ht_fill, ht->ht_size,
 	   100.0 * (double) ht->ht_fill / (double) ht->ht_size);

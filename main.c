@@ -2924,6 +2924,8 @@ print_version (void)
 {
   static int printed_version = 0;
 
+  return;
+
   char *precede = print_data_base_flag ? "# " : "";
 
   if (printed_version)
@@ -2962,20 +2964,20 @@ print_version (void)
 static void
 print_data_base ()
 {
-  time_t when;
+  //time_t when;
 
-  when = time ((time_t *) 0);
-  printf (_("\n# Make data base, printed on %s"), ctime (&when));
+  //when = time ((time_t *) 0);
+  //printf (_("\n# Make data base, printed on %s"), ctime (&when));
 
-  print_variable_data_base ();
+  //print_variable_data_base ();
   //print_dir_data_base ();
   //print_rule_data_base ();
-  //print_file_data_base ();
+  print_file_data_base ();
   //print_vpath_data_base ();
   //strcache_print_stats ("#");
 
-  when = time ((time_t *) 0);
-  printf (_("\n# Finished Make data base on %s\n"), ctime (&when));
+  //when = time ((time_t *) 0);
+  //printf (_("\n# Finished Make data base on %s\n"), ctime (&when));
 }
 
 static void
@@ -3042,7 +3044,7 @@ die (int status)
       dying = 1;
 
       if (print_version_flag)
-	print_version ();
+        ;//print_version ();
 
       /* Wait for children to die.  */
       err = (status != 0);

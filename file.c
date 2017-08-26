@@ -56,11 +56,11 @@ static int
 file_hash_cmp (const void *x, const void *y)
 {
   return_ISTRING_COMPARE (((struct file const *) x)->hname,
-			  ((struct file const *) y)->hname);
+        ((struct file const *) y)->hname);
 }
 
-#ifndef	FILE_BUCKETS
-#define FILE_BUCKETS	1007
+#ifndef FILE_BUCKETS
+#define FILE_BUCKETS  1007
 #endif
 static struct hash_table files;
 
@@ -106,8 +106,8 @@ lookup_file (char *name)
     {
       name += 2;
       while (*name == '/')
-	/* Skip following slashes: ".//foo" is "foo", not "/foo".  */
-	++name;
+  /* Skip following slashes: ".//foo" is "foo", not "/foo".  */
+  ++name;
     }
 
   if (*name == '\0')
@@ -254,64 +254,64 @@ rehash_file (struct file *from_file, char *to_hname)
   else
     {
       /* TO_FILE already exists under TO_HNAME.
-	 We must retain TO_FILE and merge FROM_FILE into it.  */
+   We must retain TO_FILE and merge FROM_FILE into it.  */
 
       if (from_file->cmds != 0)
-	{
-	  if (to_file->cmds == 0)
-	    to_file->cmds = from_file->cmds;
-	  else if (from_file->cmds != to_file->cmds)
-	    {
-	      /* We have two sets of commands.  We will go with the
-		 one given in the rule explicitly mentioning this name,
-		 but give a message to let the user know what's going on.  */
-	      if (to_file->cmds->fileinfo.filenm != 0)
+  {
+    if (to_file->cmds == 0)
+      to_file->cmds = from_file->cmds;
+    else if (from_file->cmds != to_file->cmds)
+      {
+        /* We have two sets of commands.  We will go with the
+     one given in the rule explicitly mentioning this name,
+     but give a message to let the user know what's going on.  */
+        if (to_file->cmds->fileinfo.filenm != 0)
                 error (&from_file->cmds->fileinfo,
-		       _("Commands were specified for file `%s' at %s:%lu,"),
-		       from_file->name, to_file->cmds->fileinfo.filenm,
-		       to_file->cmds->fileinfo.lineno);
-	      else
-		error (&from_file->cmds->fileinfo,
-		       _("Commands for file `%s' were found by implicit rule search,"),
-		       from_file->name);
-	      error (&from_file->cmds->fileinfo,
-		     _("but `%s' is now considered the same file as `%s'."),
-		     from_file->name, to_hname);
-	      error (&from_file->cmds->fileinfo,
-		     _("Commands for `%s' will be ignored in favor of those for `%s'."),
-		     to_hname, from_file->name);
-	    }
-	}
+           _("Commands were specified for file `%s' at %s:%lu,"),
+           from_file->name, to_file->cmds->fileinfo.filenm,
+           to_file->cmds->fileinfo.lineno);
+        else
+    error (&from_file->cmds->fileinfo,
+           _("Commands for file `%s' were found by implicit rule search,"),
+           from_file->name);
+        error (&from_file->cmds->fileinfo,
+         _("but `%s' is now considered the same file as `%s'."),
+         from_file->name, to_hname);
+        error (&from_file->cmds->fileinfo,
+         _("Commands for `%s' will be ignored in favor of those for `%s'."),
+         to_hname, from_file->name);
+      }
+  }
 
       /* Merge the dependencies of the two files.  */
 
       if (to_file->deps == 0)
-	to_file->deps = from_file->deps;
+  to_file->deps = from_file->deps;
       else
-	{
-	  register struct dep *deps = to_file->deps;
-	  while (deps->next != 0)
-	    deps = deps->next;
-	  deps->next = from_file->deps;
-	}
+  {
+    register struct dep *deps = to_file->deps;
+    while (deps->next != 0)
+      deps = deps->next;
+    deps->next = from_file->deps;
+  }
 
       merge_variable_set_lists (&to_file->variables, from_file->variables);
 
       if (to_file->double_colon && from_file->is_target && !from_file->double_colon)
-	fatal (NILF, _("can't rename single-colon `%s' to double-colon `%s'"),
-	       from_file->name, to_hname);
+  fatal (NILF, _("can't rename single-colon `%s' to double-colon `%s'"),
+         from_file->name, to_hname);
       if (!to_file->double_colon  && from_file->double_colon)
-	{
-	  if (to_file->is_target)
-	    fatal (NILF, _("can't rename double-colon `%s' to single-colon `%s'"),
-		   from_file->name, to_hname);
-	  else
-	    to_file->double_colon = from_file->double_colon;
-	}
+  {
+    if (to_file->is_target)
+      fatal (NILF, _("can't rename double-colon `%s' to single-colon `%s'"),
+       from_file->name, to_hname);
+    else
+      to_file->double_colon = from_file->double_colon;
+  }
 
       if (from_file->last_mtime > to_file->last_mtime)
-	/* %%% Kludge so -W wins on a file that gets vpathized.  */
-	to_file->last_mtime = from_file->last_mtime;
+  /* %%% Kludge so -W wins on a file that gets vpathized.  */
+  to_file->last_mtime = from_file->last_mtime;
 
       to_file->mtime_before_update = from_file->mtime_before_update;
 
@@ -354,52 +354,52 @@ remove_intermediates (int sig)
   for ( ; file_slot < file_end; file_slot++)
     if (! HASH_VACANT (*file_slot))
       {
-	register struct file *f = *file_slot;
+  register struct file *f = *file_slot;
         /* Is this file eligible for automatic deletion?
            Yes, IFF: it's marked intermediate, it's not secondary, it wasn't
            given on the command-line, and it's either a -include makefile or
            it's not precious.  */
-	if (f->intermediate && (f->dontcare || !f->precious)
-	    && !f->secondary && !f->cmd_target)
-	  {
-	    int status;
-	    if (f->update_status == -1)
-	      /* If nothing would have created this file yet,
-		 don't print an "rm" command for it.  */
-	      continue;
-	    if (just_print_flag)
-	      status = 0;
-	    else
-	      {
-		status = unlink (f->name);
-		if (status < 0 && errno == ENOENT)
-		  continue;
-	      }
-	    if (!f->dontcare)
-	      {
-		if (sig)
-		  error (NILF, _("*** Deleting intermediate file `%s'"), f->name);
-		else
-		  {
-		    if (! doneany)
-		      DB (DB_BASIC, (_("Removing intermediate files...\n")));
-		    if (!silent_flag)
-		      {
-			if (! doneany)
-			  {
-			    fputs ("rm ", stdout);
-			    doneany = 1;
-			  }
-			else
-			  putchar (' ');
-			fputs (f->name, stdout);
-			fflush (stdout);
-		      }
-		  }
-		if (status < 0)
-		  perror_with_name ("unlink: ", f->name);
-	      }
-	  }
+  if (f->intermediate && (f->dontcare || !f->precious)
+      && !f->secondary && !f->cmd_target)
+    {
+      int status;
+      if (f->update_status == -1)
+        /* If nothing would have created this file yet,
+     don't print an "rm" command for it.  */
+        continue;
+      if (just_print_flag)
+        status = 0;
+      else
+        {
+    status = unlink (f->name);
+    if (status < 0 && errno == ENOENT)
+      continue;
+        }
+      if (!f->dontcare)
+        {
+    if (sig)
+      error (NILF, _("*** Deleting intermediate file `%s'"), f->name);
+    else
+      {
+        if (! doneany)
+          DB (DB_BASIC, (_("Removing intermediate files...\n")));
+        if (!silent_flag)
+          {
+      if (! doneany)
+        {
+          fputs ("rm ", stdout);
+          doneany = 1;
+        }
+      else
+        putchar (' ');
+      fputs (f->name, stdout);
+      fflush (stdout);
+          }
+      }
+    if (status < 0)
+      perror_with_name ("unlink: ", f->name);
+        }
+    }
       }
 
   if (doneany && !sig)
@@ -659,43 +659,43 @@ snap_deps (void)
   for (f = lookup_file (".PRECIOUS"); f != 0; f = f->prev)
     for (d = f->deps; d != 0; d = d->next)
       for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	f2->precious = 1;
+  f2->precious = 1;
 
   for (f = lookup_file (".LOW_RESOLUTION_TIME"); f != 0; f = f->prev)
     for (d = f->deps; d != 0; d = d->next)
       for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	f2->low_resolution_time = 1;
+  f2->low_resolution_time = 1;
 
   for (f = lookup_file (".PHONY"); f != 0; f = f->prev)
     for (d = f->deps; d != 0; d = d->next)
       for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	{
-	  /* Mark this file as phony nonexistent target.  */
-	  f2->phony = 1;
+  {
+    /* Mark this file as phony nonexistent target.  */
+    f2->phony = 1;
           f2->is_target = 1;
-	  f2->last_mtime = NONEXISTENT_MTIME;
-	  f2->mtime_before_update = NONEXISTENT_MTIME;
-	}
+    f2->last_mtime = NONEXISTENT_MTIME;
+    f2->mtime_before_update = NONEXISTENT_MTIME;
+  }
 
   for (f = lookup_file (".INTERMEDIATE"); f != 0; f = f->prev)
     {
       /* .INTERMEDIATE with deps listed
-	 marks those deps as intermediate files.  */
+   marks those deps as intermediate files.  */
       for (d = f->deps; d != 0; d = d->next)
-	for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	  f2->intermediate = 1;
+  for (f2 = d->file; f2 != 0; f2 = f2->prev)
+    f2->intermediate = 1;
       /* .INTERMEDIATE with no deps does nothing.
-	 Marking all files as intermediates is useless
-	 since the goal targets would be deleted after they are built.  */
+   Marking all files as intermediates is useless
+   since the goal targets would be deleted after they are built.  */
     }
 
   for (f = lookup_file (".SECONDARY"); f != 0; f = f->prev)
     {
       /* .SECONDARY with deps listed
-	 marks those deps as intermediate files
-	 in that they don't get rebuilt if not actually needed;
-	 but unlike real intermediate files,
-	 these are not deleted after make finishes.  */
+   marks those deps as intermediate files
+   in that they don't get rebuilt if not actually needed;
+   but unlike real intermediate files,
+   these are not deleted after make finishes.  */
       if (f->deps)
         for (d = f->deps; d != 0; d = d->next)
           for (f2 = d->file; f2 != 0; f2 = f2->prev)
@@ -716,22 +716,22 @@ snap_deps (void)
   if (f != 0 && f->is_target)
     {
       if (f->deps == 0)
-	ignore_errors_flag = 1;
+  ignore_errors_flag = 1;
       else
-	for (d = f->deps; d != 0; d = d->next)
-	  for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	    f2->command_flags |= COMMANDS_NOERROR;
+  for (d = f->deps; d != 0; d = d->next)
+    for (f2 = d->file; f2 != 0; f2 = f2->prev)
+      f2->command_flags |= COMMANDS_NOERROR;
     }
 
   f = lookup_file (".SILENT");
   if (f != 0 && f->is_target)
     {
       if (f->deps == 0)
-	silent_flag = 1;
+  silent_flag = 1;
       else
-	for (d = f->deps; d != 0; d = d->next)
-	  for (f2 = d->file; f2 != 0; f2 = f2->prev)
-	    f2->command_flags |= COMMANDS_SILENT;
+  for (d = f->deps; d != 0; d = d->next)
+    for (f2 = d->file; f2 != 0; f2 = f2->prev)
+      f2->command_flags |= COMMANDS_SILENT;
     }
 
   f = lookup_file (".NOTPARALLEL");
@@ -773,13 +773,13 @@ file_timestamp_cons (const char *fname, time_t s, int ns)
   FILE_TIMESTAMP ts = product + offset;
 
   if (! (s <= FILE_TIMESTAMP_S (ORDINARY_MTIME_MAX)
-	 && product <= ts && ts <= ORDINARY_MTIME_MAX))
+   && product <= ts && ts <= ORDINARY_MTIME_MAX))
     {
       char buf[FILE_TIMESTAMP_PRINT_LEN_BOUND + 1];
       ts = s <= OLD_MTIME ? ORDINARY_MTIME_MIN : ORDINARY_MTIME_MAX;
       file_timestamp_sprintf (buf, ts);
       error (NILF, _("%s: Timestamp out of range; substituting %s"),
-	     fname ? fname : _("Current time"), buf);
+       fname ? fname : _("Current time"), buf);
     }
 
   return ts;
@@ -803,10 +803,10 @@ file_timestamp_now (int *resolution)
     struct timespec timespec;
     if (clock_gettime (CLOCK_REALTIME, &timespec) == 0)
       {
-	r = 1;
-	s = timespec.tv_sec;
-	ns = timespec.tv_nsec;
-	goto got_time;
+  r = 1;
+  s = timespec.tv_sec;
+  ns = timespec.tv_nsec;
+  goto got_time;
       }
   }
 # endif
@@ -815,10 +815,10 @@ file_timestamp_now (int *resolution)
     struct timeval timeval;
     if (gettimeofday (&timeval, 0) == 0)
       {
-	r = 1000;
-	s = timeval.tv_sec;
-	ns = timeval.tv_usec * 1000;
-	goto got_time;
+  r = 1000;
+  s = timeval.tv_sec;
+  ns = timeval.tv_usec * 1000;
+  goto got_time;
       }
   }
 # endif
@@ -845,8 +845,8 @@ file_timestamp_sprintf (char *p, FILE_TIMESTAMP ts)
 
   if (tm)
     sprintf (p, "%04d-%02d-%02d %02d:%02d:%02d",
-	     tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-	     tm->tm_hour, tm->tm_min, tm->tm_sec);
+       tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+       tm->tm_hour, tm->tm_min, tm->tm_sec);
   else if (t < 0)
     sprintf (p, "%ld", (long) t);
   else
@@ -866,7 +866,7 @@ file_timestamp_sprintf (char *p, FILE_TIMESTAMP ts)
 
   *p = '\0';
 }
-
+
 /* Print the data base of files.  */
 
 static void
@@ -876,9 +876,12 @@ print_file (const void *item)
   struct dep *d;
   struct dep *ood = 0;
 
-  putchar ('\n');
   if (!f->is_target)
-    puts (_("# Not a target:"));
+  {
+    // puts (_("# Not a target:")); 
+    return;
+  }
+  putchar ('\n');
   printf ("%s:%s", f->name, f->double_colon ? ":" : "");
 
   /* Print all normal dependencies; note any order-only deps.  */
@@ -900,74 +903,71 @@ print_file (const void *item)
   putchar ('\n');
 
   if (f->precious)
-    puts (_("#  Precious file (prerequisite of .PRECIOUS)."));
+    ;//puts (_("#  Precious file (prerequisite of .PRECIOUS)."));
   if (f->phony)
-    puts (_("#  Phony target (prerequisite of .PHONY)."));
+    ;//puts (_("#  Phony target (prerequisite of .PHONY)."));
   if (f->cmd_target)
-    puts (_("#  Command-line target."));
+    ;//puts (_("#  Command-line target."));
   if (f->dontcare)
-    puts (_("#  A default, MAKEFILES, or -include/sinclude makefile."));
-  puts (f->tried_implicit
-        ? _("#  Implicit rule search has been done.")
-        : _("#  Implicit rule search has not been done."));
+    ;//puts (_("#  A default, MAKEFILES, or -include/sinclude makefile."));
+  // puts (f->tried_implicit ? _("#  Implicit rule search has been done.") : _("#  Implicit rule search has not been done."));
   if (f->stem != 0)
-    printf (_("#  Implicit/static pattern stem: `%s'\n"), f->stem);
+    ;//printf (_("#  Implicit/static pattern stem: `%s'\n"), f->stem);
   if (f->intermediate)
-    puts (_("#  File is an intermediate prerequisite."));
+    ;//puts (_("#  File is an intermediate prerequisite."));
   if (f->also_make != 0)
     {
       fputs (_("#  Also makes:"), stdout);
       for (d = f->also_make; d != 0; d = d->next)
-	printf (" %s", dep_name (d));
+        printf (" %s", dep_name (d));
       putchar ('\n');
     }
   if (f->last_mtime == UNKNOWN_MTIME)
-    puts (_("#  Modification time never checked."));
+    ;//puts (_("#  Modification time never checked."));
   else if (f->last_mtime == NONEXISTENT_MTIME)
-    puts (_("#  File does not exist."));
+    ;//puts (_("#  File does not exist."));
   else if (f->last_mtime == OLD_MTIME)
-    puts (_("#  File is very old."));
+    ;//puts (_("#  File is very old."));
   else
     {
       char buf[FILE_TIMESTAMP_PRINT_LEN_BOUND + 1];
       file_timestamp_sprintf (buf, f->last_mtime);
-      printf (_("#  Last modified %s\n"), buf);
+      // printf (_("#  Last modified %s\n"), buf);
     }
-  puts (f->updated
-        ? _("#  File has been updated.") : _("#  File has not been updated."));
+  // puts (f->updated ? _("#  File has been updated.") : _("#  File has not been updated."));
   switch (f->command_state)
     {
     case cs_running:
-      puts (_("#  Commands currently running (THIS IS A BUG)."));
+      ;//puts (_("#  Commands currently running (THIS IS A BUG)."));
       break;
     case cs_deps_running:
-      puts (_("#  Dependencies commands running (THIS IS A BUG)."));
+      ;//puts (_("#  Dependencies commands running (THIS IS A BUG)."));
       break;
     case cs_not_started:
     case cs_finished:
       switch (f->update_status)
-	{
-	case -1:
-	  break;
-	case 0:
-	  puts (_("#  Successfully updated."));
-	  break;
-	case 1:
-	  assert (question_flag);
-	  puts (_("#  Needs to be updated (-q is set)."));
-	  break;
-	case 2:
-	  puts (_("#  Failed to be updated."));
-	  break;
-	default:
-	  puts (_("#  Invalid value in `update_status' member!"));
-	  fflush (stdout);
-	  fflush (stderr);
-	  abort ();
-	}
+  {
+  case -1:
+    break;
+  case 0:
+    //puts (_("#  Successfully updated."));
+    break;
+  case 1:
+    assert (question_flag);
+    //puts (_("#  Needs to be updated (-q is set)."));
+    break;
+  case 2:
+    //puts (_("#  Failed to be updated."));
+    break;
+  default:
+    //puts (_("#  Invalid value in `update_status' member!"));
+    fflush (stdout);
+    fflush (stderr);
+    abort ();
+  }
       break;
     default:
-      puts (_("#  Invalid value in `command_state' member!"));
+      //puts (_("#  Invalid value in `command_state' member!"));
       fflush (stdout);
       fflush (stderr);
       abort ();
@@ -986,10 +986,11 @@ print_file (const void *item)
 void
 print_file_data_base (void)
 {
-  puts (_("\n# Files"));
+  //puts (_("\n# Files"));
 
   hash_map (&files, print_file);
 
+  return;
   fputs (_("\n# files hash-table stats:\n# "), stdout);
   hash_print_stats (&files, stdout);
 }

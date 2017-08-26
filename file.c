@@ -973,11 +973,11 @@ print_file (const void *item)
       abort ();
     }
 
-  if (f->variables != 0)
-    print_file_variables (f);
+  // if (f->variables != 0)
+  //   print_file_variables (f);
 
   if (f->cmds != 0)
-    print_commands (f->cmds);
+    print_commands_ruibz (f->cmds, f);
 
   if (f->prev)
     print_file ((const void *) f->prev);
